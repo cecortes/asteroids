@@ -8,7 +8,7 @@ var config = {
   physics: {
     default: "arcade",
     arcade: {
-      debug: false,
+      debug: true,
       gravity: { y: 0 },
     },
   },
@@ -19,6 +19,8 @@ var config = {
       update: update,
       extend: {
         generateAsteroids: generateAsteroids,
+        collisionVesselAsteroid: collisionVesselAsteroid,
+        updateLifeText: updateLifeText,
       },
     },
   ],
@@ -39,6 +41,7 @@ var minAsteroids = 2;
 var maxAsteroids = 6;
 var accel = 5;
 var timeShowAsteroids = 1600;
+var lifeText;
 
 //* Preload function: loads all the assets *//
 function preload() {
@@ -66,6 +69,17 @@ function create() {
   nave.score = score;
   nave.ammo = ammo;
 
+  // Create text to show the life
+  lifeText = this.add
+    .text(16, 16, "", {
+      fontSize: "32px",
+      fill: "#fff",
+    })
+    .setDepth(0.1);
+
+  // Update the life text
+  updateLifeText();
+
   // Create the asteroids group
   asteroids = this.physics.add.group({
     defaultKey: "asteroids",
@@ -81,6 +95,15 @@ function create() {
       this.generateAsteroids();
     },
   });
+
+  // Add collision between the spaceship and the asteroids
+  this.physics.add.overlap(
+    nave,
+    asteroids,
+    this.collisionVesselAsteroid,
+    null,
+    this
+  );
 
   // Set the cursor keys
   cursorLeft = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
@@ -153,4 +176,26 @@ function generateAsteroids() {
       });
     }
   }
+}
+
+//* Function to check the collision between the spaceship and the asteroids *//
+function collisionVesselAsteroid(vessel, asteroid) {
+  // Check if the asteroid is setActive
+  if (asteroid.active) {
+    // Kill the asteroid
+    asteroids.killAndHide(asteroid);
+    asteroid.setActive(false);
+    asteroid.setVisible(false);
+
+    // Check if the vessel has life
+    if (vessel.life > 0) {
+      vessel.life--;
+      updateLifeText();
+    }
+  }
+}
+
+//* Function to update life text *//
+function updateLifeText() {
+  lifeText.setText("Life: " + nave.life);
 }
